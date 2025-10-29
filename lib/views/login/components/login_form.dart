@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:chat_app/utils/constants/app_sizes.dart';
+import 'package:chat_app/controller/auth_controller.dart';
 import 'package:chat_app/utils/validators/app_validators.dart';
 import 'package:chat_app/utils/constants/app_text_strings.dart';
 import 'package:chat_app/views/components/custom_outline_button.dart';
@@ -14,8 +15,7 @@ class LoginForm extends StatefulWidget {
 
 class _LoginFormState extends State<LoginForm> {
   late final GlobalKey<FormState> _formKey;
-  late final TextEditingController _email;
-  late final TextEditingController _password;
+  late final AuthController _controller;
 
   bool _isObscureText = true;
 
@@ -23,14 +23,13 @@ class _LoginFormState extends State<LoginForm> {
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
-    _email = TextEditingController();
-    _password = TextEditingController();
+    _controller = AuthController();
   }
 
   @override
   void dispose() {
-    _email.dispose();
-    _password.dispose();
+    _controller.email.dispose();
+    _controller.password.dispose();
     super.dispose();
   }
 
@@ -45,7 +44,7 @@ class _LoginFormState extends State<LoginForm> {
         child: Column(
           children: <Widget>[
             TextFormField(
-              controller: _email,
+              controller: _controller.email,
               autofocus: true,
               autocorrect: false,
               keyboardType: TextInputType.emailAddress,
@@ -62,7 +61,7 @@ class _LoginFormState extends State<LoginForm> {
             const SizedBox(height: AppSizes.spaceBetweenItems),
 
             TextFormField(
-              controller: _password,
+              controller: _controller.password,
               autocorrect: false,
               enableSuggestions: false,
               obscureText: _isObscureText,
@@ -96,10 +95,10 @@ class _LoginFormState extends State<LoginForm> {
 
             CustomOutlinedButton(
               text: AppTextStrings.loginButtonText,
-              onPressed: () {
+              onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  final email = _email.text.trim();
-                  final password = _password.text.trim();
+                  await _controller.loginUser();
+                  return;
                 }
               },
             ),

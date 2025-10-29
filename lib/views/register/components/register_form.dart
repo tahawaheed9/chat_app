@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:chat_app/models/user_model.dart';
 import 'package:chat_app/utils/constants/app_sizes.dart';
+import 'package:chat_app/controller/auth_controller.dart';
+import 'package:chat_app/controller/database_controller.dart';
 import 'package:chat_app/utils/validators/app_validators.dart';
 import 'package:chat_app/utils/constants/app_text_strings.dart';
 import 'package:chat_app/views/components/custom_outline_button.dart';
@@ -14,9 +17,8 @@ class RegisterForm extends StatefulWidget {
 
 class _RegisterFormState extends State<RegisterForm> {
   late final GlobalKey<FormState> _formKey;
-  late final TextEditingController _username;
-  late final TextEditingController _email;
-  late final TextEditingController _password;
+  late final AuthController _controller;
+  late final DatabaseController _dbController;
 
   bool _isObscureText = true;
 
@@ -24,16 +26,15 @@ class _RegisterFormState extends State<RegisterForm> {
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
-    _username = TextEditingController();
-    _email = TextEditingController();
-    _password = TextEditingController();
+    _controller = AuthController();
+    _dbController = DatabaseController();
   }
 
   @override
   void dispose() {
-    _username.dispose();
-    _email.dispose();
-    _password.dispose();
+    _controller.username.dispose();
+    _controller.email.dispose();
+    _controller.password.dispose();
     super.dispose();
   }
 
@@ -48,7 +49,7 @@ class _RegisterFormState extends State<RegisterForm> {
         child: Column(
           children: <Widget>[
             TextFormField(
-              controller: _username,
+              controller: _controller.username,
               autofocus: true,
               keyboardType: TextInputType.text,
               decoration: const InputDecoration(
@@ -67,7 +68,7 @@ class _RegisterFormState extends State<RegisterForm> {
             const SizedBox(height: AppSizes.spaceBetweenItems),
 
             TextFormField(
-              controller: _email,
+              controller: _controller.email,
               autocorrect: false,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
@@ -83,7 +84,7 @@ class _RegisterFormState extends State<RegisterForm> {
             const SizedBox(height: AppSizes.spaceBetweenItems),
 
             TextFormField(
-              controller: _password,
+              controller: _controller.password,
               autocorrect: false,
               enableSuggestions: false,
               obscureText: _isObscureText,
@@ -117,11 +118,21 @@ class _RegisterFormState extends State<RegisterForm> {
 
             CustomOutlinedButton(
               text: AppTextStrings.registerButtonText,
-              onPressed: () {
+              onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  final username = _email.text.trim();
-                  final email = _email.text.trim();
-                  final password = _password.text.trim();
+                  await _controller.registerUser();
+
+                  final String userId = _controller.currentUser!.uid;
+                  final String username = _controller.username.text;
+                  final String email = _controller.email.text;
+
+                  UserModel userData = UserModel(
+                    userId: userId,
+                    username: username,
+                    email: email,
+                  );
+                  await _dbController.createUserData(userData);
+                  return;
                 }
               },
             ),

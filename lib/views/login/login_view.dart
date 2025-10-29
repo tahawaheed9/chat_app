@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'package:get/get.dart';
+
 import 'package:chat_app/utils/constants/app_sizes.dart';
 import 'package:chat_app/views/components/custom_heading.dart';
 import 'package:chat_app/views/components/custom_divider.dart';
 import 'package:chat_app/utils/constants/app_text_strings.dart';
 import 'package:chat_app/views/login/components/login_form.dart';
 import 'package:chat_app/views/components/custom_outline_button.dart';
-import 'package:chat_app/controllers/navigation/navigation_controller.dart';
 
 class LoginView extends StatelessWidget {
   const LoginView({super.key});
@@ -26,18 +27,9 @@ class LoginView extends StatelessWidget {
               const LoginForm(),
               const CustomDivider(),
               CustomOutlinedButton(
-                text: AppTextStrings.resetPasswordButtonText,
-                onPressed: () {
-                  return NavigationController.pushResetPasswordView(context);
-                },
-              ),
-              const SizedBox(height: AppSizes.spaceBetweenItems),
-              CustomOutlinedButton(
                 isSecondary: true,
                 text: AppTextStrings.createAnAccountButtonText,
-                onPressed: () {
-                  return NavigationController.pushRegisterView(context);
-                },
+                onPressed: () => Get.offAllNamed('/register'),
               ),
             ],
           ),
