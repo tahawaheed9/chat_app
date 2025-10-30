@@ -30,6 +30,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: AppTextStrings.appName,
       theme: ThemeData(
+        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       debugShowCheckedModeBanner: false,
