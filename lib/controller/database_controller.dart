@@ -11,12 +11,12 @@ class DatabaseController extends GetxController {
   late final FirebaseFirestore _db;
   late final AuthController _authController;
 
-  late final CollectionReference _userCollRef;
-  late final CollectionReference _chatRoomCollRef;
-
   static const String _userCollection = 'users';
   static const String _chatRoomCollection = 'chat-rooms';
   static const String _messagesCollection = 'messages';
+
+  late final CollectionReference _userCollRef;
+  late final CollectionReference _chatRoomCollRef;
 
   DatabaseController() {
     _db = FirebaseFirestore.instance;

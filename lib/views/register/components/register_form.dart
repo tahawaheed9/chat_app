@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:get/get.dart';
+
 import 'package:chat_app/models/user_model.dart';
 import 'package:chat_app/utils/constants/app_sizes.dart';
 import 'package:chat_app/controller/auth_controller.dart';
@@ -17,7 +19,12 @@ class RegisterForm extends StatefulWidget {
 
 class _RegisterFormState extends State<RegisterForm> {
   late final GlobalKey<FormState> _formKey;
-  late final AuthController _controller;
+
+  late final TextEditingController _username;
+  late final TextEditingController _email;
+  late final TextEditingController _password;
+
+  late final AuthController _auth;
   late final DatabaseController _dbController;
 
   bool _isObscureText = true;
@@ -26,15 +33,20 @@ class _RegisterFormState extends State<RegisterForm> {
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
-    _controller = AuthController();
-    _dbController = DatabaseController();
+
+    _username = TextEditingController();
+    _email = TextEditingController();
+    _password = TextEditingController();
+
+    _auth = Get.find<AuthController>();
+    _dbController = Get.find<DatabaseController>();
   }
 
   @override
   void dispose() {
-    _controller.username.dispose();
-    _controller.email.dispose();
-    _controller.password.dispose();
+    _username.dispose();
+    _email.dispose();
+    _password.dispose();
     super.dispose();
   }
 
@@ -49,7 +61,7 @@ class _RegisterFormState extends State<RegisterForm> {
         child: Column(
           children: <Widget>[
             TextFormField(
-              controller: _controller.username,
+              controller: _username,
               autofocus: true,
               keyboardType: TextInputType.text,
               decoration: const InputDecoration(
@@ -68,7 +80,7 @@ class _RegisterFormState extends State<RegisterForm> {
             const SizedBox(height: AppSizes.spaceBetweenItems),
 
             TextFormField(
-              controller: _controller.email,
+              controller: _email,
               autocorrect: false,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
@@ -84,7 +96,7 @@ class _RegisterFormState extends State<RegisterForm> {
             const SizedBox(height: AppSizes.spaceBetweenItems),
 
             TextFormField(
-              controller: _controller.password,
+              controller: _password,
               autocorrect: false,
               enableSuggestions: false,
               obscureText: _isObscureText,
@@ -120,17 +132,20 @@ class _RegisterFormState extends State<RegisterForm> {
               text: AppTextStrings.registerButtonText,
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  await _controller.registerUser();
+                  final String username = _username.text.trim();
+                  final String email = _email.text.trim();
+                  final String password = _password.text.trim();
 
-                  final String userId = _controller.currentUser!.uid;
-                  final String username = _controller.username.text;
-                  final String email = _controller.email.text;
+                  await _auth.registerUser(email: email, password: password);
+
+                  final String userId = _auth.currentUser!.uid;
 
                   UserModel userData = UserModel(
                     userId: userId,
                     username: username,
                     email: email,
                   );
+
                   await _dbController.createUserData(userData);
                   return;
                 }

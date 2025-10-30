@@ -17,6 +17,7 @@ class AppTextStrings {
   /// Error Messages
   static const String requiredEmailFormatError =
       'Please enter a valid email address';
+  static const String onNoUserFound = 'No user found...';
 
   static String requiredFieldError({required String fieldName}) {
     return '$fieldName is required';

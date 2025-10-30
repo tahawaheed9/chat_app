@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:chat_app/utils/constants/routes.dart';
 import 'package:chat_app/controller/exceptions/auth_exceptions.dart';
 
 class AuthController extends GetxController {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late final FirebaseAuth _auth;
 
-  final TextEditingController username = TextEditingController();
-  final TextEditingController email = TextEditingController();
-  final TextEditingController password = TextEditingController();
+  AuthController() {
+    _auth = FirebaseAuth.instance;
+  }
 
   // Get User...
   User? get currentUser {
@@ -23,14 +24,18 @@ class AuthController extends GetxController {
   }
 
   // Register User...
-  Future<User> registerUser() async {
+  Future<User> registerUser({
+    required String email,
+    required String password,
+  }) async {
     try {
       await _auth.createUserWithEmailAndPassword(
-        email: email.text.trim(),
-        password: password.text.trim(),
+        email: email,
+        password: password,
       );
       final user = _auth.currentUser;
       if (user != null) {
+        Get.offAllNamed(Routes.loginRoute);
         return user;
       } else {
         throw UserNotLoggedInAuthException();
@@ -53,15 +58,15 @@ class AuthController extends GetxController {
   }
 
   // Login User...
-  Future<User> loginUser() async {
+  Future<User> loginUser({
+    required String email,
+    required String password,
+  }) async {
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: email.text.trim(),
-        password: password.text.trim(),
-      );
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
       final user = _auth.currentUser;
       if (user != null) {
-        Get.offAllNamed('/home');
+        Get.offAllNamed(Routes.homeRoute);
         return user;
       } else {
         throw UserNotLoggedInAuthException();
@@ -88,7 +93,7 @@ class AuthController extends GetxController {
     final user = _auth.currentUser;
     if (user != null) {
       await _auth.signOut();
-      Get.offAllNamed('/login');
+      Get.offAllNamed(Routes.loginRoute);
       return;
     } else {
       throw UserNotLoggedInAuthException();
