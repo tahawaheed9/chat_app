@@ -31,7 +31,7 @@ class _NewChatViewState extends State<NewChatView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Start a new conversation')),
+      appBar: AppBar(title: const Text(AppTextStrings.newChatViewAppBarTitle)),
       body: StreamBuilder<List<DocumentSnapshot>>(
         stream: _db.getAllUsers(),
         builder: (context, snapshot) {

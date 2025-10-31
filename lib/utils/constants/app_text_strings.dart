@@ -25,6 +25,7 @@ class AppTextStrings {
   static const String createAnAccountButtonText = 'Create an account';
   static const String alreadyHaveAnAccountButtonText =
       'Already have an account';
+  static const String newChatButtonText = 'New chat';
 
   /// Error Messages
   static const String onRequiredEmailFormatError =

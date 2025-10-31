@@ -30,9 +30,10 @@ class HomeView extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Get.toNamed(Routes.newChatRoute),
-        child: const Icon(Icons.chat_outlined),
+        icon: const Icon(Icons.chat_outlined),
+        label: const Text(AppTextStrings.newChatButtonText),
       ),
       body: StreamBuilder<List<ChatRoomModel>>(
         stream: db.getChatRooms(),
