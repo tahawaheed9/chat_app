@@ -16,4 +16,8 @@ class AppSizes {
   /// Box Constraints
   static const double defaultConstrainedHeight = 50.0;
   static const double defaultConstrainedWidth = 400.0;
+
+  // BottomNavigationWidget Safe Area Paddings...
+  static const double bottomNavWidgetVertical = 5.0;
+  static const double bottomNavWidgetHorizontal = 10.0;
 }

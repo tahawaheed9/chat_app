@@ -10,14 +10,14 @@ import 'package:chat_app/controller/database_controller.dart';
 import 'package:chat_app/utils/helpers/helper_functions.dart';
 import 'package:chat_app/utils/constants/app_text_strings.dart';
 
-class NewChatView extends StatefulWidget {
-  const NewChatView({super.key});
+class ContactsView extends StatefulWidget {
+  const ContactsView({super.key});
 
   @override
-  State<NewChatView> createState() => _NewChatViewState();
+  State<ContactsView> createState() => _ContactsViewState();
 }
 
-class _NewChatViewState extends State<NewChatView> {
+class _ContactsViewState extends State<ContactsView> {
   late final AuthController _auth;
   late final DatabaseController _db;
 
@@ -31,7 +31,7 @@ class _NewChatViewState extends State<NewChatView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(AppTextStrings.newChatViewAppBarTitle)),
+      appBar: AppBar(title: const Text(AppTextStrings.contactsViewAppBarTitle)),
       body: StreamBuilder<List<DocumentSnapshot>>(
         stream: _db.getAllUsers(),
         builder: (context, snapshot) {

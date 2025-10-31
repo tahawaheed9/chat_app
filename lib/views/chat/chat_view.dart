@@ -11,6 +11,7 @@ import 'package:chat_app/views/components/chat_bubble.dart';
 import 'package:chat_app/utils/helpers/helper_functions.dart';
 import 'package:chat_app/controller/database_controller.dart';
 import 'package:chat_app/utils/constants/app_text_strings.dart';
+import 'package:chat_app/views/chat/components/bottom_navigation_widget.dart';
 
 class ChatView extends StatefulWidget {
   final String? chatRoomId;
@@ -108,9 +109,11 @@ class _ChatViewState extends State<ChatView> {
                 },
               ),
             ),
-            _buildInputField(),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationWidget(
+        onSendButtonPressed: onSendButtonPressed,
       ),
     );
   }
@@ -145,7 +148,8 @@ class _ChatViewState extends State<ChatView> {
           Expanded(
             child: TextFormField(
               controller: _message,
-              expands: true,
+              minLines: 1,
+              maxLines: 5,
               keyboardType: TextInputType.text,
               textInputAction: TextInputAction.newline,
               decoration: const InputDecoration(
@@ -161,20 +165,22 @@ class _ChatViewState extends State<ChatView> {
               color: Theme.of(context).colorScheme.primaryContainer,
             ),
             child: IconButton(
-              onPressed: () async {
-                if (_message.text.isNotEmpty) {
-                  final String latestMessage = _message.text.trim();
-                  final DateTime timestamp = Timestamp.now().toDate();
-
-                  _message.clear();
-                  return;
-                }
-              },
+              onPressed: () async {},
               icon: const Icon(Icons.send_outlined),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void onSendButtonPressed() async {
+    if (_message.text.isNotEmpty) {
+      final String latestMessage = _message.text.trim();
+      final DateTime timestamp = Timestamp.now().toDate();
+
+      _message.clear();
+      return;
+    }
   }
 }

@@ -8,7 +8,7 @@ class AppTextStrings {
   static const String loginViewAppBarTitle = 'Login';
   static const String registerViewAppBarTitle = 'Register';
   static const String homeViewAppBarTitle = 'ChatApp';
-  static const String newChatViewAppBarTitle = 'New chat';
+  static const String contactsViewAppBarTitle = 'Contacts';
 
   /// View Headings...
   static const String loginViewHeading = 'Welcome Back!';
@@ -18,6 +18,9 @@ class AppTextStrings {
   static const String userNameFieldLabel = 'Username';
   static const String emailFieldLabel = 'Email';
   static const String passwordFieldLabel = 'Password';
+
+  /// Text Field Hint...
+  static const String messageFieldHint = 'Type your message...';
 
   /// Buttons Title
   static const String loginButtonText = 'Login';
