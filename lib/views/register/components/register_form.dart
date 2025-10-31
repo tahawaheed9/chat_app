@@ -64,6 +64,7 @@ class _RegisterFormState extends State<RegisterForm> {
               controller: _username,
               autofocus: true,
               keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.person_outline),
                 hint: Text(AppTextStrings.userNameFieldLabel),
@@ -82,6 +83,7 @@ class _RegisterFormState extends State<RegisterForm> {
             TextFormField(
               controller: _email,
               autocorrect: false,
+              textInputAction: TextInputAction.next,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.email_outlined),
@@ -146,7 +148,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     email: email,
                   );
 
-                  await _dbController.createUserData(userData);
+                  await _dbController.setUserData(userData: userData);
                   return;
                 }
               },

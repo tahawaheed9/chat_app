@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
-import 'package:chat_app/models/user_model.dart';
 import 'package:chat_app/views/chat/chat_view.dart';
+import 'package:chat_app/utils/constants/routes.dart';
+import 'package:chat_app/models/chat_room_model.dart';
 import 'package:chat_app/controller/auth_controller.dart';
+import 'package:chat_app/utils/helpers/helper_functions.dart';
 import 'package:chat_app/controller/database_controller.dart';
 import 'package:chat_app/utils/constants/app_text_strings.dart';
 
@@ -16,13 +18,7 @@ class HomeView extends StatelessWidget {
     final DatabaseController db = Get.find<DatabaseController>();
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
-          children: <Widget>[
-            Icon(Icons.chat_outlined),
-            SizedBox(width: 5.0),
-            Text('Chats'),
-          ],
-        ),
+        title: const Text(AppTextStrings.homeViewAppBarTitle),
         actions: <Widget>[
           IconButton(
             onPressed: () async {
@@ -34,42 +30,49 @@ class HomeView extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: db.getUserStream(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Get.toNamed(Routes.newChatRoute),
+        child: const Icon(Icons.chat_outlined),
+      ),
+      body: StreamBuilder<List<ChatRoomModel>>(
+        stream: db.getChatRooms(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return HelperFunctions.showErrorWidget(
+              error: snapshot.error.toString(),
+            );
           }
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return HelperFunctions.showLoadingWidget();
           }
+          final chatRooms = snapshot.data;
 
-          final users = snapshot.data;
-
-          if (users == null || users.isEmpty) {
-            return const Center(child: Text(AppTextStrings.onNoUserFound));
+          if (chatRooms == null || chatRooms.isEmpty) {
+            return HelperFunctions.showErrorWidget(
+              error: AppTextStrings.onNoChatFound,
+            );
           }
           return ListView.builder(
-            itemCount: users.length,
+            itemCount: chatRooms.length,
             itemBuilder: (context, index) {
-              final Map<String, dynamic> user = users[index];
-
-              final UserModel userData = UserModel.fromJson(user);
-
-              final String userId = userData.userId;
-              final String username = userData.username;
-
+              final ChatRoomModel chatRoomData = chatRooms[index];
+              final String chatRoomId = chatRoomData.chatRoomId;
+              final String receiverUsername = chatRoomData.receiverUsername;
               return ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                leading: HelperFunctions.showAvatarWidget(),
                 title: Text(
-                  username,
+                  chatRoomData.receiverUsername,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
+                subtitle: Text(chatRoomData.lastMessage),
+                trailing: Text(chatRoomData.timestamp.toString()),
                 onTap: () {
                   Get.to(
                     ChatView(
-                      receiverUserId: userId,
-                      receiverUsername: username,
+                      chatRoomId: chatRoomId,
+                      senderId: null,
+                      receiverId: null,
+                      receiverUsername: receiverUsername,
                     ),
                   );
                 },

@@ -15,14 +15,14 @@ class RegisterView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(title: const Text(AppTextStrings.registerViewAppBarTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.defaultPadding),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              const CustomHeading(text: 'Let\'s create an account.'),
+              const CustomHeading(text: AppTextStrings.registerViewHeading),
               const SizedBox(height: AppSizes.spaceBetweenItems),
               const RegisterForm(),
               const CustomDivider(),

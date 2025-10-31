@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import 'package:chat_app/views/home/home_view.dart';
 import 'package:chat_app/views/login/login_view.dart';
+import 'package:chat_app/views/new_chat/new_chat_view.dart';
 import 'package:chat_app/views/register/register_view.dart';
 
 class Routes {
@@ -10,6 +11,7 @@ class Routes {
   static const String loginRoute = '/login';
   static const String registerRoute = '/register';
   static const String homeRoute = '/home';
+  static const String newChatRoute = '/new-chat';
 
   static const String initialRoute = loginRoute;
 
@@ -17,5 +19,6 @@ class Routes {
     GetPage(name: loginRoute, page: () => const LoginView()),
     GetPage(name: registerRoute, page: () => const RegisterView()),
     GetPage(name: homeRoute, page: () => const HomeView()),
+    GetPage(name: newChatRoute, page: () => const NewChatView()),
   ];
 }

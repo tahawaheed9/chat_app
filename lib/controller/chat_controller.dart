@@ -1,7 +1,8 @@
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 
-import 'package:chat_app/models/message_model.dart';
+import 'package:chat_app/models/user_model.dart';
+import 'package:chat_app/models/chat_room_model.dart';
 import 'package:chat_app/controller/auth_controller.dart';
 import 'package:chat_app/controller/database_controller.dart';
 
@@ -15,28 +16,17 @@ class ChatController extends GetxController {
   }
 
   Future<void> sendMessage({
-    required String receiverId,
-    required String message,
+    required String chatRoomId,
+    required String lastMessage,
   }) async {
-    final String currentUserId = _auth.currentUser!.uid;
-    final String? currentUserEmail = _auth.currentUser?.email;
+    final String senderId = _auth.currentUser!.uid;
+
+    final UserModel userData = await _db.getCurrentUser(userId: senderId);
+
+    final String senderUsername = userData.username;
     final DateTime timestamp = Timestamp.now().toDate();
 
-    // New message...
-    MessageModel newMessage = MessageModel(
-      senderId: currentUserId,
-      senderUsername: currentUserEmail!,
-      receiverId: receiverId,
-      message: message,
-      timestamp: timestamp,
-    );
-
-    // Creating a chat-room...
-    List<String> userIds = [currentUserId, receiverId];
-    userIds.sort();
-    String chatRoomId = userIds.join('_');
-
     // Adding new message to the database...
-    await _db.createChatRoom(chatRoomId, newMessage);
+    // await _db.createOrUpdateChatRoom(chatRoomData: chatRoomData);
   }
 }

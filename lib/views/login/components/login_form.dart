@@ -57,6 +57,7 @@ class _LoginFormState extends State<LoginForm> {
               controller: _email,
               autofocus: true,
               autocorrect: false,
+              textInputAction: TextInputAction.next,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.email_outlined),

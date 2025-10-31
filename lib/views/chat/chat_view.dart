@@ -8,15 +8,21 @@ import 'package:chat_app/utils/constants/app_sizes.dart';
 import 'package:chat_app/controller/auth_controller.dart';
 import 'package:chat_app/controller/chat_controller.dart';
 import 'package:chat_app/views/components/chat_bubble.dart';
+import 'package:chat_app/utils/helpers/helper_functions.dart';
 import 'package:chat_app/controller/database_controller.dart';
+import 'package:chat_app/utils/constants/app_text_strings.dart';
 
 class ChatView extends StatefulWidget {
-  final String receiverUserId;
+  final String? chatRoomId;
+  final String? senderId;
+  final String? receiverId;
   final String receiverUsername;
 
   const ChatView({
     super.key,
-    required this.receiverUserId,
+    required this.chatRoomId,
+    required this.senderId,
+    required this.receiverId,
     required this.receiverUsername,
   });
 
@@ -49,13 +55,12 @@ class _ChatViewState extends State<ChatView> {
 
   @override
   Widget build(BuildContext context) {
-    final senderId = _auth.currentUser!.uid;
     return Scaffold(
       appBar: AppBar(
         title: Row(
           children: <Widget>[
-            const CircleAvatar(child: Icon(Icons.person)),
-            const SizedBox(width: 5.0),
+            HelperFunctions.showAvatarWidget(),
+            const SizedBox(width: AppSizes.spaceBetweenAppBarItems),
             Text(widget.receiverUsername),
           ],
         ),
@@ -65,16 +70,37 @@ class _ChatViewState extends State<ChatView> {
         child: Column(
           children: <Widget>[
             Expanded(
-              child: StreamBuilder(
-                stream: _db.getMessages(senderId, widget.receiverUserId),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: widget.chatRoomId != null
+                    ? _db.getChatMessages(
+                        chatRoomId: widget.chatRoomId,
+                        senderId: null,
+                        receiverId: null,
+                      )
+                    : _db.getChatMessages(
+                        chatRoomId: null,
+                        senderId: widget.senderId,
+                        receiverId: widget.receiverId,
+                      ),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
+                    return HelperFunctions.showErrorWidget(
+                      error: snapshot.error.toString(),
+                    );
                   }
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return HelperFunctions.showLoadingWidget();
+                  }
+
+                  final messages = snapshot.data as Map<String, dynamic>?;
+
+                  if (messages == null || messages.isEmpty) {
+                    return HelperFunctions.showErrorWidget(
+                      error: AppTextStrings.onEmptyChat,
+                    );
                   }
                   return ListView(
+                    shrinkWrap: true,
                     children: snapshot.data!.docs
                         .map((doc) => _buildMessageBubble(doc))
                         .toList(),
@@ -90,13 +116,11 @@ class _ChatViewState extends State<ChatView> {
   }
 
   Widget _buildMessageBubble(DocumentSnapshot doc) {
-    Map<String, dynamic> json = doc.data() as Map<String, dynamic>;
+    final MessageModel messageData = MessageModel.fromJson(doc);
 
-    MessageModel messageData = MessageModel.fromJson(json);
+    final bool isCurrentUser = messageData.senderId == _auth.currentUser!.uid;
 
-    bool isCurrentUser = messageData.senderId == _auth.currentUser!.uid;
-
-    final alignment = isCurrentUser
+    final Alignment alignment = isCurrentUser
         ? Alignment.centerRight
         : Alignment.centerLeft;
 
@@ -121,27 +145,33 @@ class _ChatViewState extends State<ChatView> {
           Expanded(
             child: TextFormField(
               controller: _message,
+              expands: true,
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.newline,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.chat_outlined),
                 border: OutlineInputBorder(),
               ),
             ),
           ),
-          IconButton(
-            onPressed: () async {
-              if (_message.text.isNotEmpty) {
-                final String message = _message.text.trim();
+          const SizedBox(width: AppSizes.spaceBetweenItems),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(50.0),
+              color: Theme.of(context).colorScheme.primaryContainer,
+            ),
+            child: IconButton(
+              onPressed: () async {
+                if (_message.text.isNotEmpty) {
+                  final String latestMessage = _message.text.trim();
+                  final DateTime timestamp = Timestamp.now().toDate();
 
-                await _chat.sendMessage(
-                  receiverId: widget.receiverUserId,
-                  message: message,
-                );
-
-                _message.clear();
-                return;
-              }
-            },
-            icon: const Icon(Icons.send_outlined),
+                  _message.clear();
+                  return;
+                }
+              },
+              icon: const Icon(Icons.send_outlined),
+            ),
           ),
         ],
       ),

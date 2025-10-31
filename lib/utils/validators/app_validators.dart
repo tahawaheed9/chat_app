@@ -9,7 +9,7 @@ class AppValidators {
   /// Required Field Validation
   static String? required({required String? value, required String fieldName}) {
     if (value == null || value.trim().isEmpty) {
-      return AppTextStrings.requiredFieldError(fieldName: fieldName);
+      return AppTextStrings.onRequiredFieldError(fieldName: fieldName);
     }
     return null;
   }
@@ -20,14 +20,14 @@ class AppValidators {
   static String? isValidEmail({required String? value}) {
     // First, check if the field is empty.
     if (value == null || value.trim().isEmpty) {
-      return AppTextStrings.requiredFieldError(
+      return AppTextStrings.onRequiredFieldError(
         fieldName: AppTextStrings.emailFieldLabel,
       );
     }
 
     // Check if the format matches the standard email regex.
     if (!_emailRegex.hasMatch(value.trim())) {
-      return AppTextStrings.requiredEmailFormatError;
+      return AppTextStrings.onRequiredEmailFormatError;
     }
     return null;
   }
