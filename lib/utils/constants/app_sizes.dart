@@ -20,4 +20,8 @@ class AppSizes {
   // BottomNavigationWidget Safe Area Paddings...
   static const double bottomNavWidgetVertical = 5.0;
   static const double bottomNavWidgetHorizontal = 10.0;
+
+  // Chat Bubble Sizes...
+  static const double chatBubbleMargin = 5.0;
+  static const double chatBubbleBorderRadius = 10.0;
 }

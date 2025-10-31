@@ -15,7 +15,9 @@ class HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AuthController auth = Get.find<AuthController>();
     final DatabaseController db = Get.find<DatabaseController>();
+    final userId = auth.currentUser!.uid;
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppTextStrings.homeViewAppBarTitle),
@@ -36,7 +38,7 @@ class HomeView extends StatelessWidget {
         label: const Text(AppTextStrings.newChatButtonText),
       ),
       body: StreamBuilder<List<ChatRoomModel>>(
-        stream: db.getChatRooms(),
+        stream: db.getChatRooms(userId: userId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return HelperFunctions.showErrorWidget(
@@ -57,23 +59,23 @@ class HomeView extends StatelessWidget {
             itemCount: chatRooms.length,
             itemBuilder: (context, index) {
               final ChatRoomModel chatRoomData = chatRooms[index];
-              final String chatRoomId = chatRoomData.chatRoomId;
-              final String receiverUsername = chatRoomData.receiverUsername;
               return ListTile(
                 leading: HelperFunctions.showAvatarWidget(),
                 title: Text(
-                  chatRoomData.receiverUsername,
+                  '',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: Text(chatRoomData.lastMessage),
-                trailing: Text(chatRoomData.timestamp.toString()),
+                subtitle: Text(
+                  chatRoomData.lastMessage,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: Text(chatRoomData.readableTime),
                 onTap: () {
                   Get.to(
                     ChatView(
-                      chatRoomId: chatRoomId,
-                      senderId: null,
-                      receiverId: null,
-                      receiverUsername: receiverUsername,
+                      userIds: chatRoomData.userIds,
+                      receiverUsername: '',
                     ),
                   );
                 },

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:chat_app/models/user_model.dart';
 import 'package:chat_app/models/message_model.dart';
+import 'package:chat_app/models/chat_room_model.dart';
 import 'package:chat_app/utils/constants/app_sizes.dart';
 import 'package:chat_app/controller/auth_controller.dart';
 import 'package:chat_app/controller/chat_controller.dart';
@@ -14,16 +16,12 @@ import 'package:chat_app/utils/constants/app_text_strings.dart';
 import 'package:chat_app/views/chat/components/bottom_navigation_widget.dart';
 
 class ChatView extends StatefulWidget {
-  final String? chatRoomId;
-  final String? senderId;
-  final String? receiverId;
+  final List<String> userIds;
   final String receiverUsername;
 
   const ChatView({
     super.key,
-    required this.chatRoomId,
-    required this.senderId,
-    required this.receiverId,
+    required this.userIds,
     required this.receiverUsername,
   });
 
@@ -38,14 +36,21 @@ class _ChatViewState extends State<ChatView> {
   late final AuthController _auth;
   late final DatabaseController _db;
 
+  late final UserModel userData;
+
   @override
   void initState() {
     super.initState();
+
     _message = TextEditingController();
 
     _chat = Get.find<ChatController>();
     _auth = Get.find<AuthController>();
     _db = Get.find<DatabaseController>();
+
+    final userId = _auth.currentUser!.uid;
+
+    _getCurrentUser(userId: userId);
   }
 
   @override
@@ -62,58 +67,46 @@ class _ChatViewState extends State<ChatView> {
           children: <Widget>[
             HelperFunctions.showAvatarWidget(),
             const SizedBox(width: AppSizes.spaceBetweenAppBarItems),
-            Text(widget.receiverUsername),
+            Text(''),
           ],
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSizes.defaultPadding),
-        child: Column(
-          children: <Widget>[
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: widget.chatRoomId != null
-                    ? _db.getChatMessages(
-                        chatRoomId: widget.chatRoomId,
-                        senderId: null,
-                        receiverId: null,
-                      )
-                    : _db.getChatMessages(
-                        chatRoomId: null,
-                        senderId: widget.senderId,
-                        receiverId: widget.receiverId,
-                      ),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return HelperFunctions.showErrorWidget(
-                      error: snapshot.error.toString(),
-                    );
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return HelperFunctions.showLoadingWidget();
-                  }
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _db.getConversation(userIds: widget.userIds),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return HelperFunctions.showErrorWidget(
+                error: snapshot.error.toString(),
+              );
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return HelperFunctions.showLoadingWidget();
+            }
 
-                  final messages = snapshot.data as Map<String, dynamic>?;
+            final QuerySnapshot? query = snapshot.data;
+            final List<DocumentSnapshot>? docs = query?.docs;
 
-                  if (messages == null || messages.isEmpty) {
-                    return HelperFunctions.showErrorWidget(
-                      error: AppTextStrings.onEmptyChat,
-                    );
-                  }
-                  return ListView(
-                    shrinkWrap: true,
-                    children: snapshot.data!.docs
-                        .map((doc) => _buildMessageBubble(doc))
-                        .toList(),
-                  );
-                },
-              ),
-            ),
-          ],
+            if (docs == null || docs.isEmpty) {
+              return HelperFunctions.showErrorWidget(
+                error: AppTextStrings.onEmptyChat,
+              );
+            }
+
+            return ListView(
+              shrinkWrap: true,
+              children: snapshot.data!.docs
+                  .map((doc) => _buildMessageBubble(doc))
+                  .toList(),
+            );
+          },
         ),
       ),
       bottomNavigationBar: BottomNavigationWidget(
-        onSendButtonPressed: onSendButtonPressed,
+        message: _message,
+        onMessageEntered: _handleMessage,
+        onSendButtonPressed: _onSendButtonPressed,
       ),
     );
   }
@@ -121,7 +114,7 @@ class _ChatViewState extends State<ChatView> {
   Widget _buildMessageBubble(DocumentSnapshot doc) {
     final MessageModel messageData = MessageModel.fromJson(doc);
 
-    final bool isCurrentUser = messageData.senderId == _auth.currentUser!.uid;
+    final bool isCurrentUser = messageData.senderId == userData.userId;
 
     final Alignment alignment = isCurrentUser
         ? Alignment.centerRight
@@ -129,58 +122,54 @@ class _ChatViewState extends State<ChatView> {
 
     return Container(
       alignment: alignment,
-      child: Column(
-        children: <Widget>[
-          ChatBubble(
-            message: messageData.message,
-            isCurrentUser: isCurrentUser,
-          ),
-        ],
+      child: ChatBubble(
+        message: messageData.message,
+        isCurrentUser: isCurrentUser,
       ),
     );
   }
 
-  Widget _buildInputField() {
-    return SafeArea(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Expanded(
-            child: TextFormField(
-              controller: _message,
-              minLines: 1,
-              maxLines: 5,
-              keyboardType: TextInputType.text,
-              textInputAction: TextInputAction.newline,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.chat_outlined),
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSizes.spaceBetweenItems),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(50.0),
-              color: Theme.of(context).colorScheme.primaryContainer,
-            ),
-            child: IconButton(
-              onPressed: () async {},
-              icon: const Icon(Icons.send_outlined),
-            ),
-          ),
-        ],
-      ),
-    );
+  // Fetching the message from the BottomNavigationWidget...
+  void _handleMessage(String message) {
+    _message.text = message;
+    return;
   }
 
-  void onSendButtonPressed() async {
-    if (_message.text.isNotEmpty) {
-      final String latestMessage = _message.text.trim();
-      final DateTime timestamp = Timestamp.now().toDate();
+  Future<void> _onSendButtonPressed() async {
+    final String lastMessage = _message.text.trim();
+    final DateTime timestamp = Timestamp.now().toDate();
 
-      _message.clear();
-      return;
-    }
+    final ChatRoomModel chatRoomData = ChatRoomModel(
+      chatRoomId: '',
+      userIds: widget.userIds,
+      lastMessage: lastMessage,
+      timestamp: timestamp,
+    );
+
+    final String receiverId = widget.userIds
+        .where((id) => id != userData.userId)
+        .first;
+
+    final MessageModel messageData = MessageModel(
+      senderId: userData.userId,
+      senderUsername: userData.username,
+      receiverId: receiverId,
+      receiverUsername: widget.receiverUsername,
+      message: lastMessage,
+      timestamp: timestamp,
+    );
+
+    await _chat.sendMessage(
+      chatRoomData: chatRoomData,
+      messageData: messageData,
+    );
+
+    _message.clear();
+    return;
+  }
+
+  Future<UserModel> _getCurrentUser({required String userId}) async {
+    userData = await _db.getCurrentUser(userId: userId);
+    return userData;
   }
 }

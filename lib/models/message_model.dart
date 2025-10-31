@@ -1,7 +1,8 @@
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MessageModel {
-  final String messageId;
+  final String? messageId;
   final String senderId;
   final String senderUsername;
   final String receiverId;
@@ -10,7 +11,7 @@ class MessageModel {
   final DateTime timestamp;
 
   MessageModel({
-    required this.messageId,
+    this.messageId,
     required this.senderId,
     required this.senderUsername,
     required this.receiverId,
@@ -19,19 +20,38 @@ class MessageModel {
     required this.timestamp,
   });
 
+  String get readableTime {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+
+    final messageDate = DateTime(
+      timestamp.year,
+      timestamp.month,
+      timestamp.day,
+    );
+
+    if (messageDate.isAtSameMomentAs(today)) {
+      return DateFormat.jm().format(timestamp);
+    } else if (messageDate.isAtSameMomentAs(yesterday)) {
+      return 'Yesterday';
+    } else {
+      return DateFormat.MMMd().format(timestamp);
+    }
+  }
+
   factory MessageModel.fromJson(DocumentSnapshot doc) {
     final json = doc.data() as Map<String, dynamic>;
 
     final timestampData = json['timestamp'];
     DateTime messageTime;
 
-    if (timestampData is DateTime) {
+    if (timestampData is Timestamp) {
+      messageTime = timestampData.toDate();
+    } else if (timestampData is DateTime) {
       messageTime = timestampData;
-    } else if (timestampData != null &&
-        timestampData.runtimeType.toString().contains('Timestamp')) {
-      messageTime = DateTime.fromMillisecondsSinceEpoch(0);
     } else {
-      messageTime = DateTime.fromMillisecondsSinceEpoch(0);
+      messageTime = DateTime.now();
     }
 
     return MessageModel(
@@ -47,7 +67,6 @@ class MessageModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'message-id': messageId,
       'sender-id': senderId,
       'sender-username': senderUsername,
       'receiver-id': receiverId,

@@ -15,10 +15,19 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+      margin: const EdgeInsets.all(AppSizes.chatBubbleMargin),
       padding: const EdgeInsets.all(AppSizes.defaultPadding),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(AppSizes.chatBubbleBorderRadius),
+          bottomLeft: Radius.circular(AppSizes.chatBubbleBorderRadius),
+          bottomRight: isCurrentUser
+              ? Radius.zero
+              : Radius.circular(AppSizes.chatBubbleBorderRadius),
+          topLeft: isCurrentUser
+              ? Radius.circular(AppSizes.chatBubbleBorderRadius)
+              : Radius.zero,
+        ),
         color: isCurrentUser
             ? Theme.of(context).colorScheme.primaryContainer
             : Theme.of(context).colorScheme.secondaryContainer,

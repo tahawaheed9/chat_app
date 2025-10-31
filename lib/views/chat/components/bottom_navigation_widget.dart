@@ -4,31 +4,35 @@ import 'package:chat_app/utils/constants/app_sizes.dart';
 import 'package:chat_app/utils/constants/app_text_strings.dart';
 
 class BottomNavigationWidget extends StatefulWidget {
+  final TextEditingController message;
   final VoidCallback onSendButtonPressed;
 
-  const BottomNavigationWidget({super.key, required this.onSendButtonPressed});
+  final void Function(String text) onMessageEntered;
+
+  const BottomNavigationWidget({
+    super.key,
+    required this.message,
+    required this.onSendButtonPressed,
+    required this.onMessageEntered,
+  });
 
   @override
   State<BottomNavigationWidget> createState() => _BottomNavigationWidgetState();
 }
 
 class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
-  late final TextEditingController _message;
-
   late final ValueNotifier<bool> _textFieldHasData;
 
   @override
   void initState() {
     super.initState();
-    _message = TextEditingController();
     _textFieldHasData = ValueNotifier(false);
-    _message.addListener(_onTextChanged);
+    widget.message.addListener(_onTextChanged);
   }
 
   @override
   void dispose() {
-    _message.removeListener(_onTextChanged);
-    _message.dispose();
+    widget.message.removeListener(_onTextChanged);
     _textFieldHasData.dispose();
     super.dispose();
   }
@@ -54,7 +58,7 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
             // Chat Box...
             Expanded(
               child: TextFormField(
-                controller: _message,
+                controller: widget.message,
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
                 decoration: const InputDecoration(
@@ -77,7 +81,13 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                   ),
                   child: IconButton(
                     onPressed: textFieldHasData
-                        ? widget.onSendButtonPressed
+                        ? () {
+                            final message = widget.message.text.trim();
+
+                            widget.onMessageEntered(message);
+
+                            widget.onSendButtonPressed();
+                          }
                         : null,
                     icon: const Icon(Icons.send_outlined),
                   ),
@@ -91,6 +101,6 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
   }
 
   void _onTextChanged() {
-    _textFieldHasData.value = _message.text.trim().isNotEmpty;
+    _textFieldHasData.value = widget.message.text.trim().isNotEmpty;
   }
 }

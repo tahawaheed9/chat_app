@@ -61,6 +61,9 @@ class _ContactsViewState extends State<ContactsView> {
               final String receiverId = userData.userId;
               final String receiverUsername = userData.username;
 
+              final List<String> userIds = [senderId, receiverId];
+
+
               return ListTile(
                 leading: HelperFunctions.showAvatarWidget(),
                 title: Text(
@@ -71,9 +74,7 @@ class _ContactsViewState extends State<ContactsView> {
                   Get.back();
                   Get.to(
                     ChatView(
-                      chatRoomId: null,
-                      senderId: senderId,
-                      receiverId: receiverId,
+                      userIds: userIds,
                       receiverUsername: receiverUsername,
                     ),
                   );

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:chat_app/models/user_model.dart';
+import 'package:chat_app/models/message_model.dart';
 import 'package:chat_app/models/chat_room_model.dart';
 import 'package:chat_app/controller/auth_controller.dart';
 import 'package:chat_app/utils/constants/app_text_strings.dart';
@@ -72,13 +73,17 @@ class DatabaseController extends GetxController {
   /// ----- CHAT ROOM RELATED CODE -----
 
   // Getting all the chat rooms...
-  Stream<List<ChatRoomModel>> getChatRooms() {
+  Stream<List<ChatRoomModel>> getChatRooms({required String userId}) {
     try {
-      return _chatRoomCollRef.snapshots().map((snapshot) {
-        return snapshot.docs.map((doc) {
-          return ChatRoomModel.fromJson(doc);
-        }).toList();
-      });
+      return _chatRoomCollRef
+          .orderBy('timestamp', descending: true)
+          .where('user-ids', arrayContains: userId)
+          .snapshots()
+          .map((snapshot) {
+            return snapshot.docs.map((doc) {
+              return ChatRoomModel.fromJson(doc);
+            }).toList();
+          });
     } catch (error) {
       debugPrint(error.toString());
       rethrow;
@@ -86,42 +91,77 @@ class DatabaseController extends GetxController {
   }
 
   // Creating or updating the a chat-room...
-  Future<void> createOrUpdateChatRoom() async {
-    try {} catch (error) {
+  Future<void> createOrUpdateChatRoom({
+    required ChatRoomModel chatRoomData,
+    required MessageModel messageData,
+  }) async {
+    try {
+      final List<String> sortedUserIds = chatRoomData.userIds..sort();
+      // Check if the chat-room exists...
+      final QuerySnapshot query = await _chatRoomCollRef
+          .where('user-ids', isEqualTo: sortedUserIds)
+          .get();
+
+      // If chat-room exists...
+      if (query.docs.isNotEmpty) {
+        // Updating the existing chat-room...
+        final chatRoomId = query.docs.first.id;
+
+        final Map<String, dynamic> chatRoomUpdates = {
+          'last-message': chatRoomData.lastMessage,
+          'timestamp': chatRoomData.timestamp,
+        };
+
+        await _chatRoomCollRef
+            .doc(chatRoomId)
+            .update(chatRoomUpdates)
+            .whenComplete(() async {
+              await _chatRoomCollRef
+                  .doc(chatRoomId)
+                  .collection(_messagesCollection)
+                  .add(messageData.toJson());
+            });
+        return;
+      }
+
+      // Otherwise, if the chat-room does not exists. create a new...
+      final DocumentReference newDoc = await _chatRoomCollRef.add(
+        chatRoomData.toJson(),
+      );
+
+      final String chatRoomId = newDoc.id;
+
+      await _chatRoomCollRef
+          .doc(chatRoomId)
+          .collection(_messagesCollection)
+          .add(messageData.toJson());
+
+      return;
+    } catch (error) {
       debugPrint(error.toString());
       rethrow;
     }
   }
 
   // Getting all the chat messages for a specific chat-room...
-  Stream<QuerySnapshot> getChatMessages({
-    required String? chatRoomId,
-    required String? senderId,
-    required String? receiverId,
+  Stream<QuerySnapshot> getConversation({
+    required List<String> userIds,
   }) async* {
     try {
-      if (chatRoomId != null) {
-        yield* _chatRoomCollRef
-            .doc(chatRoomId)
-            .collection(_messagesCollection)
-            .orderBy('timestamp', descending: false)
-            .snapshots();
-      }
+      final List<String> sortedUserIds = userIds..sort();
 
-      // Checking for the ids...
       final QuerySnapshot query = await _chatRoomCollRef
-          .where('sender-id', isEqualTo: senderId!)
-          .where('receiver-id', isEqualTo: receiverId!)
+          .where('user-ids', isEqualTo: sortedUserIds)
           .limit(1)
           .get();
 
       if (query.docs.isNotEmpty) {
-        final chatRoomId = query.docs.first.id;
+        final String chatRoomId = query.docs.first.id;
+
         yield* _chatRoomCollRef
             .doc(chatRoomId)
             .collection(_messagesCollection)
             .orderBy('timestamp', descending: false)
-            .limit(1)
             .snapshots();
       }
     } catch (error) {

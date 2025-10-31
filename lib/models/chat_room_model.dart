@@ -1,52 +1,66 @@
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatRoomModel {
   final String chatRoomId;
-  final String senderId;
-  final String receiverId;
-  final String receiverUsername;
+  final List<String> userIds;
   final String lastMessage;
   final DateTime timestamp;
 
   ChatRoomModel({
     required this.chatRoomId,
-    required this.senderId,
-    required this.receiverId,
-    required this.receiverUsername,
+    required this.userIds,
     required this.lastMessage,
     required this.timestamp,
   });
+
+  String get readableTime {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+
+    final messageDate = DateTime(
+      timestamp.year,
+      timestamp.month,
+      timestamp.day,
+    );
+
+    if (messageDate.isAtSameMomentAs(today)) {
+      return DateFormat.jm().format(timestamp);
+    } else if (messageDate.isAtSameMomentAs(yesterday)) {
+      return 'Yesterday';
+    } else {
+      return DateFormat.MMMd().format(timestamp);
+    }
+  }
 
   factory ChatRoomModel.fromJson(DocumentSnapshot doc) {
     final json = doc.data() as Map<String, dynamic>;
     final timestampData = json['timestamp'];
     DateTime messageTime;
 
-    if (timestampData is DateTime) {
+    if (timestampData is Timestamp) {
+      messageTime = timestampData.toDate();
+    } else if (timestampData is DateTime) {
       messageTime = timestampData;
-    } else if (timestampData != null &&
-        timestampData.runtimeType.toString().contains('Timestamp')) {
-      messageTime = DateTime.fromMillisecondsSinceEpoch(0);
     } else {
-      messageTime = DateTime.fromMillisecondsSinceEpoch(0);
+      messageTime = DateTime.now();
     }
 
     return ChatRoomModel(
       chatRoomId: doc.id,
-      senderId: json['sender-id'] as String? ?? '',
-      receiverId: json['receiver-id'] as String? ?? '',
-      receiverUsername: json['receiver-username'] as String? ?? '',
+      userIds: (json['user-ids'] as List<dynamic>)
+          .map((id) => id as String)
+          .toList(),
       lastMessage: json['last-message'] as String? ?? '',
       timestamp: messageTime,
     );
   }
 
   Map<String, dynamic> toJson() {
+    final List<String> sortedUserIds = userIds..sort();
     return {
-      'chat-room-id': chatRoomId,
-      'sender-id': senderId,
-      'receiver-id': receiverId,
-      'receiver-username': receiverUsername,
+      'user-ids': sortedUserIds,
       'last-message': lastMessage,
       'timestamp': timestamp,
     };
