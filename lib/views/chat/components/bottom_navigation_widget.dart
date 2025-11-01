@@ -1,8 +1,8 @@
-import 'package:chat_app/views/chat/components/custom_emoji_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chat_app/utils/constants/app_sizes.dart';
 import 'package:chat_app/utils/constants/app_text_strings.dart';
+import 'package:chat_app/views/chat/components/custom_emoji_picker.dart';
 
 class BottomNavigationWidget extends StatefulWidget {
   final TextEditingController message;
