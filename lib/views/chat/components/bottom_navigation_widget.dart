@@ -1,3 +1,4 @@
+import 'package:chat_app/views/chat/components/custom_emoji_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chat_app/utils/constants/app_sizes.dart';
@@ -61,10 +62,13 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                 controller: widget.message,
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
-                decoration: const InputDecoration(
-                  hint: Text(AppTextStrings.messageFieldHint),
-                  prefixIcon: Icon(Icons.chat_outlined),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hint: const Text(AppTextStrings.messageFieldHint),
+                  prefixIcon: GestureDetector(
+                    onTap: _showEmojiPicker,
+                    child: const Icon(Icons.emoji_emotions_outlined),
+                  ),
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ),
@@ -97,6 +101,26 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showEmojiPicker() {
+    // Hiding the keyboard before displaying the emoji picker...
+    FocusScope.of(context).unfocus();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: CustomEmojiPicker(controller: widget.message),
+          ),
+        );
+      },
     );
   }
 
