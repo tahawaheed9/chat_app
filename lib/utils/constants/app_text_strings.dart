@@ -30,6 +30,13 @@ class AppTextStrings {
       'Already have an account';
   static const String newChatButtonText = 'New chat';
 
+
+  /// Loading Messages...
+  static const String onFetchingChatRoom = 'Fetching chat room...';
+  static const String onLoadingConversation = 'Loading conversation...';
+  static const String onFetchingReceiverUsername = 'Fetching username...';
+  static const String onFetchingContacts = 'Fetching contacts...';
+
   /// Error Messages
   static const String onRequiredEmailFormatError =
       'Please enter a valid email address';

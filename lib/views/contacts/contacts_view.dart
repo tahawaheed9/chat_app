@@ -35,16 +35,19 @@ class _ContactsViewState extends State<ContactsView> {
       body: StreamBuilder<List<DocumentSnapshot>>(
         stream: _db.getAllUsers(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return HelperFunctions.showLoadingWidget();
+          if (!snapshot.hasData ||
+              snapshot.connectionState == ConnectionState.waiting) {
+            return HelperFunctions.showLoadingWidget(
+              loadingText: AppTextStrings.onFetchingContacts,
+            );
           }
           if (snapshot.hasError) {
             return HelperFunctions.showErrorWidget(
               error: snapshot.error.toString(),
             );
           }
-          final List<DocumentSnapshot>? docs = snapshot.data;
-          if (docs == null || docs.isEmpty) {
+          final List<DocumentSnapshot> docs = snapshot.data!;
+          if (docs.isEmpty) {
             return HelperFunctions.showErrorWidget(
               error: AppTextStrings.onNoUserFound,
             );
@@ -56,13 +59,11 @@ class _ContactsViewState extends State<ContactsView> {
               final DocumentSnapshot docSnapshot = docs[index];
 
               final UserModel userData = UserModel.fromJson(docSnapshot);
-
               final String senderId = _auth.currentUser!.uid;
               final String receiverId = userData.userId;
               final String receiverUsername = userData.username;
 
               final List<String> userIds = [senderId, receiverId];
-
 
               return ListTile(
                 leading: HelperFunctions.showAvatarWidget(),
@@ -72,12 +73,7 @@ class _ContactsViewState extends State<ContactsView> {
                 ),
                 onTap: () {
                   Get.back();
-                  Get.to(
-                    ChatView(
-                      userIds: userIds,
-                      receiverUsername: receiverUsername,
-                    ),
-                  );
+                  Get.to(ChatView(userIds: userIds));
                 },
               );
             },

@@ -17,13 +17,8 @@ import 'package:chat_app/views/chat/components/bottom_navigation_widget.dart';
 
 class ChatView extends StatefulWidget {
   final List<String> userIds;
-  final String receiverUsername;
 
-  const ChatView({
-    super.key,
-    required this.userIds,
-    required this.receiverUsername,
-  });
+  const ChatView({super.key, required this.userIds});
 
   @override
   State<ChatView> createState() => _ChatViewState();
@@ -36,7 +31,10 @@ class _ChatViewState extends State<ChatView> {
   late final AuthController _auth;
   late final DatabaseController _db;
 
-  late final UserModel userData;
+  late final Future<void> _loadUserFuture;
+
+  UserModel? _senderUserData;
+  UserModel? _receiverUserData;
 
   @override
   void initState() {
@@ -48,9 +46,7 @@ class _ChatViewState extends State<ChatView> {
     _auth = Get.find<AuthController>();
     _db = Get.find<DatabaseController>();
 
-    final userId = _auth.currentUser!.uid;
-
-    _getCurrentUser(userId: userId);
+    _loadUserFuture = _loadUsersData();
   }
 
   @override
@@ -61,60 +57,74 @@ class _ChatViewState extends State<ChatView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: <Widget>[
-            HelperFunctions.showAvatarWidget(),
-            const SizedBox(width: AppSizes.spaceBetweenAppBarItems),
-            Text(''),
-          ],
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppSizes.defaultPadding),
-        child: StreamBuilder<QuerySnapshot>(
-          stream: _db.getConversation(userIds: widget.userIds),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return HelperFunctions.showErrorWidget(
-                error: snapshot.error.toString(),
-              );
-            }
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return HelperFunctions.showLoadingWidget();
-            }
+    return FutureBuilder(
+      future: _loadUserFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: HelperFunctions.showLoadingWidget(
+              loadingText: AppTextStrings.onFetchingChatRoom,
+            ),
+          );
+        }
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
+              children: <Widget>[
+                HelperFunctions.showAvatarWidget(),
+                const SizedBox(width: AppSizes.spaceBetweenAppBarItems),
+                Text(_receiverUserData!.username),
+              ],
+            ),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(AppSizes.defaultPadding),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _db.getConversation(userIds: widget.userIds),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return HelperFunctions.showErrorWidget(
+                    error: snapshot.error.toString(),
+                  );
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return HelperFunctions.showLoadingWidget(
+                    loadingText: AppTextStrings.onLoadingConversation,
+                  );
+                }
 
-            final QuerySnapshot? query = snapshot.data;
-            final List<DocumentSnapshot>? docs = query?.docs;
+                final QuerySnapshot? query = snapshot.data;
+                final List<DocumentSnapshot>? docs = query?.docs;
 
-            if (docs == null || docs.isEmpty) {
-              return HelperFunctions.showErrorWidget(
-                error: AppTextStrings.onEmptyChat,
-              );
-            }
+                if (docs == null || docs.isEmpty) {
+                  return HelperFunctions.showErrorWidget(
+                    error: AppTextStrings.onEmptyChat,
+                  );
+                }
 
-            return ListView(
-              shrinkWrap: true,
-              children: snapshot.data!.docs
-                  .map((doc) => _buildMessageBubble(doc))
-                  .toList(),
-            );
-          },
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationWidget(
-        message: _message,
-        onMessageEntered: _handleMessage,
-        onSendButtonPressed: _onSendButtonPressed,
-      ),
+                return ListView(
+                  shrinkWrap: true,
+                  children: snapshot.data!.docs
+                      .map((doc) => _buildMessageBubble(doc))
+                      .toList(),
+                );
+              },
+            ),
+          ),
+          bottomNavigationBar: BottomNavigationWidget(
+            message: _message,
+            onMessageEntered: _handleMessage,
+            onSendButtonPressed: _onSendButtonPressed,
+          ),
+        );
+      },
     );
   }
 
   Widget _buildMessageBubble(DocumentSnapshot doc) {
     final MessageModel messageData = MessageModel.fromJson(doc);
 
-    final bool isCurrentUser = messageData.senderId == userData.userId;
+    final bool isCurrentUser = messageData.senderId == _senderUserData!.userId;
 
     final Alignment alignment = isCurrentUser
         ? Alignment.centerRight
@@ -146,30 +156,40 @@ class _ChatViewState extends State<ChatView> {
       timestamp: timestamp,
     );
 
-    final String receiverId = widget.userIds
-        .where((id) => id != userData.userId)
-        .first;
-
     final MessageModel messageData = MessageModel(
-      senderId: userData.userId,
-      senderUsername: userData.username,
-      receiverId: receiverId,
-      receiverUsername: widget.receiverUsername,
+      senderId: _senderUserData!.userId,
+      senderUsername: _senderUserData!.username,
+      receiverId: _receiverUserData!.userId,
+      receiverUsername: _receiverUserData!.username,
       message: lastMessage,
       timestamp: timestamp,
     );
+
+    _message.clear();
 
     await _chat.sendMessage(
       chatRoomData: chatRoomData,
       messageData: messageData,
     );
-
-    _message.clear();
     return;
   }
 
-  Future<UserModel> _getCurrentUser({required String userId}) async {
-    userData = await _db.getCurrentUser(userId: userId);
-    return userData;
+  Future<void> _loadUsersData() async {
+    final String senderId = _auth.currentUser!.uid;
+    final String receiverId = widget.userIds
+        .where((id) => id != senderId)
+        .first;
+
+    final UserModel senderUserData = await _db.getUserData(userId: senderId);
+    final UserModel receiverUserData = await _db.getUserData(
+      userId: receiverId,
+    );
+
+    if (mounted) {
+      setState(() {
+        _senderUserData = senderUserData;
+        _receiverUserData = receiverUserData;
+      });
+    }
   }
 }

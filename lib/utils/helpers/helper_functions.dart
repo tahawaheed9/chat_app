@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
 
+import 'package:chat_app/utils/constants/app_sizes.dart';
+
 class HelperFunctions {
   HelperFunctions._();
 
   // Loading Widget...
-  static Center showLoadingWidget() {
-    return const Center(child: CircularProgressIndicator());
+  static Center showLoadingWidget({String? loadingText}) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          const CircularProgressIndicator(),
+          Visibility(
+            visible: loadingText != null,
+            child: Column(
+              children: [
+                const SizedBox(height: AppSizes.spaceBetweenItems),
+                Text(loadingText!, style: const TextStyle(fontSize: 18)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // Error Widget...

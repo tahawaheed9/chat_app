@@ -40,7 +40,7 @@ class DatabaseController extends GetxController {
   }
 
   // Getting the current user information...
-  Future<UserModel> getCurrentUser({required String userId}) async {
+  Future<UserModel> getUserData({required String userId}) async {
     try {
       final docSnapshot = await _userCollRef.doc(userId).get();
       if (!docSnapshot.exists) {
@@ -150,19 +150,22 @@ class DatabaseController extends GetxController {
     try {
       final List<String> sortedUserIds = userIds..sort();
 
-      final QuerySnapshot query = await _chatRoomCollRef
-          .where('user-ids', isEqualTo: sortedUserIds)
-          .limit(1)
-          .get();
-
-      if (query.docs.isNotEmpty) {
-        final String chatRoomId = query.docs.first.id;
-
-        yield* _chatRoomCollRef
-            .doc(chatRoomId)
-            .collection(_messagesCollection)
-            .orderBy('timestamp', descending: false)
-            .snapshots();
+      await for (final chatRoomSnapshot
+          in _chatRoomCollRef
+              .where('user-ids', isEqualTo: sortedUserIds)
+              .limit(1)
+              .snapshots()) {
+        if (chatRoomSnapshot.docs.isNotEmpty) {
+          final String chatRoomId = chatRoomSnapshot.docs.first.id;
+          yield* _chatRoomCollRef
+              .doc(chatRoomId)
+              .collection(_messagesCollection)
+              .orderBy('timestamp', descending: false)
+              .snapshots();
+          break;
+        } else {
+          yield chatRoomSnapshot;
+        }
       }
     } catch (error) {
       debugPrint(error.toString());
